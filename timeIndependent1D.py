@@ -57,7 +57,7 @@ ax_psi.text(0.03, 0.45, info_text,
 ax_psi.legend()
 
 # Probability density plot
-ax_psiDist.set_title('Probability Densities |ψ_n(x)|²')
+ax_psiDist.set_title('Probability Distribution |ψ_n(x)|²')
 ax_psiDist.set_xlabel('x (nm)')
 ax_psiDist.set_ylabel('|ψ_n(x)|²')
 ax_psiDist.grid(True)
