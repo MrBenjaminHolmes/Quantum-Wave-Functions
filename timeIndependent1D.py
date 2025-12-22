@@ -26,7 +26,7 @@ E_J = Energy(n_value)
 E_eV = E_J / sci.e
 area, error = quad(lambda x: psi_sq(x, n_value), 0, L)
 
-# Plotting
+#-------------------PLOTTING-------------------#
 fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 ax_psi, ax_psiDist = axes
 
@@ -37,7 +37,6 @@ info_text = (
     rf"$\int_0^L |\psi|^2 dx = {area:.2f}$"
 )
 
-# Styled annotation box
 bbox_props = dict(boxstyle="round,pad=0.4", fc="white", ec="black", alpha=0.9)
 
 # Wavefunctions and probability densities
