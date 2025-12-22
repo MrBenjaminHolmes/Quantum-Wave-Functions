@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 from scipy.integrate import quad
 from scipy import constants as sci
 from matplotlib.animation import FuncAnimation
-from mpl_toolkits.mplot3d import Axes3D
+
+
 # Parameters
 L = 1.0                # Width of the well in nm
 L_m = L * 1e-9         # Convert to meters
