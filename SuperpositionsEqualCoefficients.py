@@ -38,6 +38,10 @@ def expectedX(t):
     expectedXValue, error = quad(lambda x: x*np.abs(psiSuper(x,t))**2 , 0, L)
     return expectedXValue
 
+def expectedXSquared(t):
+    expectedXSquaredValue, error = quad(lambda x: (x**2)*np.abs(psiSuper(x,t))**2 , 0, L)
+    return expectedXSquaredValue
+
 
 #Calculated Expeted Values
 expectedXValues = []
@@ -45,10 +49,20 @@ i=0
 for time in tvalues:
     expectedXValues.append(expectedX(time))
 
+expectedXSquaredValues = []
+i=0
+for time in tvalues:
+    expectedXSquaredValues.append(expectedXSquared(time))
+
+deltaXValues = []
+i=0
+for time in tvalues:
+    deltaXValues.append(np.sqrt(expectedXSquared(time)-(expectedX(time)**2)))
 
 #---------------PLOTTING---------------#
 fig, axes = plt.subplots(3, 2, figsize=(10, 5))
-(ax_psi, ax_psiIm) , (ax_psiDist , ax_ExpX) , (ax_ExpXsqu,null) = axes
+
+(ax_psi, ax_psiIm) , (ax_psiDist , ax_ExpX) , (ax_DeltaX, null) = axes
 
 line_psi, = ax_psi.plot(x, np.real(psiSuper(x, 0)), label=f"Re[Ψ(x,t)]")
 line_psiIm, = ax_psiIm.plot(x, np.imag(psiSuper(x, 0)), label=f"Im[Ψ(x,t)]",color='orange')
@@ -78,6 +92,12 @@ ax_ExpX.set_xlabel('Time (s)')
 ax_ExpX.set_ylabel('<X>')
 ax_ExpX.grid(True)
 
+ax_DeltaX.plot(tvalues,deltaXValues ,color='mediumpurple')
+ax_DeltaX.set_title('ΔX Over Time')
+ax_DeltaX.set_xlabel('Time (s)')
+ax_DeltaX.set_ylabel('ΔX')
+ax_DeltaX.grid(True)
+
 # Animation function
 def animate(frame):
     t = frame * 1e-16  
@@ -85,9 +105,12 @@ def animate(frame):
     line_psiIm.set_ydata(np.imag(psiSuper(x, t)))
     line_prob.set_ydata(psi_sq(x, t))
     area, error = quad(lambda x: psi_sq(x, t), 0, L)
+    print(f"-------------------------------")
+    print(f"Time: {t}")
     print(f"∫₀ᴸ |ψ(x,t)|² dx = {area:.6f} (± {error:.2e})")
     print(f"<X> = {expectedX(t)}")
     print(f"<X²> = {expectedXSquared(t)}")
+    print(f"-------------------------------")
     return line_psi,line_psiIm ,line_prob
 
 anim = FuncAnimation(fig, animate, frames=200, interval=50, blit=True)
