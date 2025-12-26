@@ -9,7 +9,7 @@ L = 1e-9
 x = np.linspace(0, L, 1000)                   
 t=0.0
 tvalues = np.linspace(0,2e-14,1000)
-n_max = 5
+n_max = 3
 momentumBounds = n_max * np.pi * sci.hbar / L
 pValues = np.linspace(-12*momentumBounds, 12*momentumBounds, 1000)
 # Wavefunction
@@ -47,7 +47,15 @@ def momentumFunc(p, t):
     real, _ = quad(lambda x: np.real(np.exp(-1j*x*p/sci.hbar) * psiSuper(x,t)), 0, L)
     imag, _ = quad(lambda x: np.imag(np.exp(-1j*x*p/sci.hbar) * psiSuper(x,t)), 0, L)
     return (real + 1j*imag) / np.sqrt(2*np.pi*sci.hbar)
+    ######BOTTLE NECK HERE######
 
+def expectedP(t):
+    expectedPValue, _ = quad(lambda p: p*np.abs(momentumFunc(p,t))**2 , pValues[0], pValues[-1])
+    return expectedPValue
+
+def expectedPSquared(t):
+    expectedPSquaredValue, _ = quad(lambda p: (p**2)*np.abs(momentumFunc(p,t))**2 ,  pValues[0], pValues[-1])
+    return expectedPSquaredValue
 
 #Calculated Expeted Values
 expectedXValues = [expectedX(time) for time in tvalues]
@@ -112,7 +120,7 @@ ax_phiIm.set_ylabel('Imϕ(p,t)')
 ax_phiIm.grid(True)
 ax_phiIm.set_xlim(-3.5e-24,3.5e-24)
 
-ax_phiDist.set_title('Probability Distribution |ϕ_n(x)|²')
+ax_phiDist.set_title('Probability Distribution |ϕ(x)|²')
 ax_phiDist.set_xlabel('p(kgms)')
 ax_phiDist.set_ylabel('|ϕ(x)|²')
 ax_phiDist.grid(True)
@@ -130,6 +138,8 @@ def animate(frame):
     print(f"∫₀ᴸ |ϕ(p,t)|² dx = {phiArea:.6f} (± {phiError:.2e})")
     print(f"<X> = {expectedX(t)*1e9} nm")
     print(f"<X²> = {expectedXSquared(t)}")
+    print(f"<P> = {expectedP(t)} kgms")
+    print(f"<P²> = {expectedXSquared(t)}")
     print(f"-------------------------------")
     return line_psi,line_psiIm ,line_prob
 
