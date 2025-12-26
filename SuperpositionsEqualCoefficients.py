@@ -56,7 +56,7 @@ expectedXValues = [expectedX(time) for time in tvalues]
 expectedXSquaredValues = [expectedXSquared(time) for time in tvalues]
 deltaXValues = [np.sqrt(expectedXSquared(time)-(expectedX(time)**2)) for time in tvalues]
 phiValues = np.array([momentumFunc(p, 0) for p in pValues])
-
+phiArea, phiError = quad(lambda p: np.abs(momentumFunc(p, 0))**2, pValues[0], pValues[-1])
 #---------------PLOTTING---------------#
 
 x_nm = x * 1e9
@@ -117,7 +117,6 @@ ax_phiDist.set_xlabel('p(kgms)')
 ax_phiDist.set_ylabel('|ϕ_n(x)|²')
 ax_phiDist.grid(True)
 
-
 # Animation function
 def animate(frame):
     t = frame * 1e-16  
@@ -125,7 +124,6 @@ def animate(frame):
     line_psiIm.set_ydata(np.imag(psiSuper(x, t)))
     line_prob.set_ydata(psi_sq(x, t))
     psiArea, psiError = quad(lambda x: psi_sq(x, t), 0, L)
-    phiArea, phiError = quad(lambda p: np.abs(momentumFunc(p, 0))**2, pValues[0], pValues[-1])
     print(f"-------------------------------")
     print(f"Time: {t}")
     print(f"∫₀ᴸ |ψ(x,t)|² dx = {psiArea:.6f} (± {psiError:.2e})")
