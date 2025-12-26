@@ -7,11 +7,9 @@ from matplotlib.animation import FuncAnimation
 # Parameters
 L = 1e-9              
 x = np.linspace(0, L, 1000)                   
-
 t=0.0
 tvalues = np.linspace(0,2e-14,1000)
-
-n_max = 3
+n_max = 5
 momentumBounds = n_max * np.pi * sci.hbar / L
 pValues = np.linspace(-12*momentumBounds, 12*momentumBounds, 1000)
 # Wavefunction
@@ -73,21 +71,21 @@ line_phiIm, = ax_phiIm.plot(pValues, np.imag(phiValues), label=f"Im[Ψ(x,t)]",co
 line_phiProb, = ax_phiDist.plot(pValues, np.abs(np.square(phiValues)),color='green')
 
 # Formatting
-ax_psi.set_title('Wavefunctions ψ_n(x,t)')
+ax_psi.set_title('Wavefunctions ψₙ(x,t)')
 ax_psi.set_xlabel('x (nm)')
-ax_psi.set_ylabel('Reψ_n(x,t)')
+ax_psi.set_ylabel('Reψₙ(x,t)')
 ax_psi.grid(True)
 ax_psi.set_ylim(-6e4, 6e4)
 
-ax_psiIm.set_title('Wavefunctions ψ_n(x,t)')
+ax_psiIm.set_title('Wavefunctions ψₙ(x,t)')
 ax_psiIm.set_xlabel('x (nm)')
-ax_psiIm.set_ylabel('Imψ_n(x,t)')
+ax_psiIm.set_ylabel('Imψₙ(x,t)')
 ax_psiIm.grid(True)
 ax_psiIm.set_ylim(-6e4, 6e4)
 
-ax_psiDist.set_title('Probability Distribution |ψ_n(x)|²')
+ax_psiDist.set_title('Probability Distribution |ψₙ(x)|²')
 ax_psiDist.set_xlabel('x (nm)')
-ax_psiDist.set_ylabel('|ψ_n(x)|²')
+ax_psiDist.set_ylabel('|ψₙ(x)|²')
 ax_psiDist.grid(True)
 
 ax_ExpX.plot(tvalues,expectedXValues ,color='lightcoral')
@@ -106,17 +104,19 @@ ax_phi.set_title('Wavefunction ϕ(p,t)')
 ax_phi.set_xlabel('p(kgms)')
 ax_phi.set_ylabel('Reϕ(p,t)')
 ax_phi.grid(True)
+ax_phi.set_xlim(-3.5e-24,3.5e-24)
 
 ax_phiIm.set_title('Wavefunction ϕ(p,t)')
 ax_phiIm.set_xlabel('p(kgms)')
 ax_phiIm.set_ylabel('Imϕ(p,t)')
 ax_phiIm.grid(True)
+ax_phiIm.set_xlim(-3.5e-24,3.5e-24)
 
 ax_phiDist.set_title('Probability Distribution |ϕ_n(x)|²')
 ax_phiDist.set_xlabel('p(kgms)')
-ax_phiDist.set_ylabel('|ϕ_n(x)|²')
+ax_phiDist.set_ylabel('|ϕ(x)|²')
 ax_phiDist.grid(True)
-
+ax_phiDist.set_xlim(-3.5e-24,3.5e-24)
 # Animation function
 def animate(frame):
     t = frame * 1e-16  
@@ -126,7 +126,7 @@ def animate(frame):
     psiArea, psiError = quad(lambda x: psi_sq(x, t), 0, L)
     print(f"-------------------------------")
     print(f"Time: {t}")
-    print(f"∫₀ᴸ |ψ(x,t)|² dx = {psiArea:.6f} (± {psiError:.2e})")
+    print(f"∫₀ᴸ |ψₙ(x,t)|² dx = {psiArea:.6f} (± {psiError:.2e})")
     print(f"∫₀ᴸ |ϕ(p,t)|² dx = {phiArea:.6f} (± {phiError:.2e})")
     print(f"<X> = {expectedX(t)*1e9} nm")
     print(f"<X²> = {expectedXSquared(t)}")
@@ -134,6 +134,6 @@ def animate(frame):
     return line_psi,line_psiIm ,line_prob
 
 anim = FuncAnimation(fig, animate, frames=200, interval=50, blit=True)
-fig.suptitle(f"Time Dependent 1D Well Wave Functions ψ(x,t)")
+fig.suptitle(f"Time Dependent 1D Well Wave Functions")
 plt.tight_layout()
 plt.show()
