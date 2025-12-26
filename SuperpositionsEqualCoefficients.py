@@ -5,24 +5,25 @@ from scipy import constants as sci
 from matplotlib.animation import FuncAnimation
 
 # Parameters
-L = 1.0                # Width of the well in nm
-L_m = L * 1e-9         # Convert to meters
-x = np.linspace(0, L, 1000)
+L = 1e-9              
+x = np.linspace(0, L, 1000)                   
+
 t=0.0
 tvalues = np.linspace(0,2e-14,1000)
+pValues = np.linspace(-6.6261e-25,+6.6261e-25,1000)
+n_max=2
+print(-6.6261e-25)
+
 # Wavefunction
 def psi(x, n):
-    return np.sqrt(2/L) * np.sin(n * np.pi * x / L)
+    return np.sqrt(2/L) * np.sin(n*np.pi*x/L)
 
-def psiTime(x_nm, t, n):
-    x_m = x_nm * 1e-9
-    E = Energy(n)
-    return psi(x_nm, n) * np.exp(-1j * E * t / sci.hbar)
+def psiTime(x, t, n):
+    return psi(x, n) * np.exp(-1j * Energy(n) * t / sci.hbar)
 
 def psiSuper(x, t):
-    return (1/np.sqrt(2)) * (
-        psiTime(x, t, 1)+
-        psiTime(x, t, 2)
+    return (1/np.sqrt(1)) * (
+        psiTime(x, t, 3)
     )
 
 # Probability density
@@ -31,7 +32,7 @@ def psi_sq(x, t):
 
 # Energy of state n
 def Energy(n):
-    return (n**2 * np.pi**2 * sci.hbar**2) / (2 * sci.electron_mass * L_m**2)
+    return (n**2 * np.pi**2 * sci.hbar**2) / (2 * sci.electron_mass * L**2)
 
 #Expected X Values
 def expectedX(t):
@@ -41,6 +42,11 @@ def expectedX(t):
 def expectedXSquared(t):
     expectedXSquaredValue, error = quad(lambda x: (x**2)*np.abs(psiSuper(x,t))**2 , 0, L)
     return expectedXSquaredValue
+
+def momentumFunc(p, t):
+    real, _ = quad(lambda x: np.real(np.exp(-1j*x*p/sci.hbar) * psiSuper(x,t)), 0, L)
+    imag, _ = quad(lambda x: np.imag(np.exp(-1j*x*p/sci.hbar) * psiSuper(x,t)), 0, L)
+    return (real + 1j*imag) / np.sqrt(2*np.pi*sci.hbar)
 
 
 #Calculated Expeted Values
@@ -60,26 +66,32 @@ for time in tvalues:
     deltaXValues.append(np.sqrt(expectedXSquared(time)-(expectedX(time)**2)))
 
 #---------------PLOTTING---------------#
-fig, axes = plt.subplots(3, 2, figsize=(10, 5))
 
-(ax_psi, ax_psiIm) , (ax_psiDist , ax_ExpX) , (ax_DeltaX, null) = axes
+x_nm = x * 1e9
+fig, axes = plt.subplots(3, 4, figsize=(12, 7))
 
-line_psi, = ax_psi.plot(x, np.real(psiSuper(x, 0)), label=f"Re[Ψ(x,t)]")
-line_psiIm, = ax_psiIm.plot(x, np.imag(psiSuper(x, 0)), label=f"Im[Ψ(x,t)]",color='orange')
-line_prob, = ax_psiDist.plot(x, psi_sq(x, 0),color='green')
+(ax_psi, ax_psiIm,ax_psiDist,ax_ExpX) , (ax_phi, ax_phiIm,ax_phiDist,ax_DeltaP), (ax_DeltaX , ax_DeltaP, _,_) = axes
+
+line_psi, = ax_psi.plot(x_nm, np.real(psiSuper(x, 0)), label=f"Re[Ψ(x,t)]")
+line_psiIm, = ax_psiIm.plot(x_nm, np.imag(psiSuper(x, 0)), label=f"Im[Ψ(x,t)]",color='orange')
+line_prob, = ax_psiDist.plot(x_nm, psi_sq(x, 0),color='green')
+
+#line_phi, = ax_phi.plot(x, np.real(momentumFunc(pValues,0)), label=f"Re[Ψ(x,t)]")
+#line_phiIm, = ax_phiIm.plot(x, np.imag(psiSuper(x, 0)), label=f"Im[Ψ(x,t)]",color='orange')
+#line_phiProb, = ax_phiDist.plot(x, psi_sq(x, 0),color='green')
 
 # Formatting
 ax_psi.set_title('Wavefunctions ψ_n(x,t)')
 ax_psi.set_xlabel('x (nm)')
 ax_psi.set_ylabel('Reψ_n(x,t)')
 ax_psi.grid(True)
-ax_psi.set_ylim(-2,2)
+ax_psi.set_ylim(-5e4, 5e4)
 
 ax_psiIm.set_title('Wavefunctions ψ_n(x,t)')
 ax_psiIm.set_xlabel('x (nm)')
 ax_psiIm.set_ylabel('Imψ_n(x,t)')
 ax_psiIm.grid(True)
-ax_psiIm.set_ylim(-2,2)
+ax_psiIm.set_ylim(-5e4, 5e4)
 
 ax_psiDist.set_title('Probability Distribution |ψ_n(x)|²')
 ax_psiDist.set_xlabel('x (nm)')
@@ -104,6 +116,7 @@ def animate(frame):
     line_psi.set_ydata(np.real(psiSuper(x, t)))
     line_psiIm.set_ydata(np.imag(psiSuper(x, t)))
     line_prob.set_ydata(psi_sq(x, t))
+    #line_phi.set_ydata(momentumFunc(p,t))
     area, error = quad(lambda x: psi_sq(x, t), 0, L)
     print(f"-------------------------------")
     print(f"Time: {t}")
