@@ -1,3 +1,4 @@
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
@@ -5,14 +6,17 @@ from scipy import constants as sci
 from matplotlib.animation import FuncAnimation
 
 # Parameters
+res = 5000
 L = 1e-9              
-x = np.linspace(0, L, 1000)              
-    
+x = np.linspace(0, L, res)              
+dx = x[1] - x[0]
+N = len(x) 
 t=0.0
-tvalues = np.linspace(0,2e-14,1000)
+tvalues = np.linspace(0,2e-14,res)
 n_max = 1
 momentumBounds = n_max * np.pi * sci.hbar / L
-pValues = np.linspace(-12*momentumBounds, 12*momentumBounds, 1000)
+p = np.linspace(-12*momentumBounds, 12*momentumBounds, res)
+#--------------POSITION SPACE-------------#
 # Wavefunction
 def psi(x, n):
     return np.sqrt(2/L) * np.sin(n*np.pi*x/L)
@@ -21,8 +25,9 @@ def psiTime(x, t, n):
     return psi(x, n) * np.exp(-1j * Energy(n) * t / sci.hbar)
 
 def psiSuper(x, t):
-    return (1/np.sqrt(n_max)) * (
-        psiTime(x, t, 1)
+    return (1/np.sqrt(n_max)) * sum(
+        psi(x, n) * np.exp(-1j * Energy(n) * t / sci.hbar)
+        for n in range(1, n_max + 1)
     )
 
 # Probability density
@@ -42,30 +47,21 @@ def expectedXSquared(t):
     expectedXSquaredValue, _ = quad(lambda x: (x**2)*np.abs(psiSuper(x,t))**2 , 0, L)
     return expectedXSquaredValue
 
-def momentumFunc(p, t):
-    real, _ = quad(lambda x: np.real(np.exp(-1j*x*p/sci.hbar) * psiSuper(x,t)), 0, L)
-    imag, _ = quad(lambda x: np.imag(np.exp(-1j*x*p/sci.hbar) * psiSuper(x,t)), 0, L)
-    return (real + 1j*imag) / np.sqrt(2*np.pi*sci.hbar)
-    ######BOTTLE NECK HERE######
+#--------------MOMENTUM-------------#
+def phi_n(p,n):
+    numerator = n*np.pi*sci.hbar*(1-(-1)**n*np.exp(-1j*p*L/sci.hbar))
+    denominator = (np.pi**2)*(sci.hbar**2)*(n**2) - (p**2)*(L**2)
+    return np.sqrt((sci.hbar)/(L*np.pi)) * (numerator/denominator)
 
-def expectedP(t):
-    expectedPValue, _ = quad(lambda p: p*np.abs(momentumFunc(p,t))**2 , pValues[0], pValues[-1])
-    return expectedPValue
+def phiSuper(p, t):
+    return sum(phi_n(p, n) * np.exp(-1j * Energy(n) * t / sci.hbar) for n in range(1, n_max + 1)) / np.sqrt(n_max)
 
-def expectedPSquared(t):
-    expectedPSquaredValue, _ = quad(lambda p: (p**2)*np.abs(momentumFunc(p,t))**2 ,  pValues[0], pValues[-1])
-    return expectedPSquaredValue
 
+#--------------EXPECTATION VALUES-------------#
 #Calculated Expeted Values
 expectedXValues = [expectedX(time) for time in tvalues]
 expectedXSquaredValues = [expectedXSquared(time) for time in tvalues]
 deltaXValues = [np.sqrt(expectedXSquared(time)-(expectedX(time)**2)) for time in tvalues]
-
-phiValues = np.array([momentumFunc(p, 0) for p in pValues])
-phiArea, phiError = quad(lambda p: np.abs(momentumFunc(p, 0))**2, pValues[0], pValues[-1])
-#expectedPValues = [expectedP(time) for time in tvalues]
-#expectedPSquaredValues = [expectedPSquared(time) for time in tvalues]
-#deltaPValues = [np.sqrt(expectedPSquared(time)-(expectedP(time)**2)) for time in tvalues]
 
 #---------------PLOTTING---------------#
 x_nm = x * 1e9
@@ -77,9 +73,8 @@ line_psi, = ax_psi.plot(x_nm, np.real(psiSuper(x, 0)), label=f"Re[Ψ(x,t)]")
 line_psiIm, = ax_psiIm.plot(x_nm, np.imag(psiSuper(x, 0)), label=f"Im[Ψ(x,t)]",color='orange')
 line_prob, = ax_psiDist.plot(x_nm, psi_sq(x, 0),color='green')
 
-line_phi, = ax_phi.plot(pValues, np.real(phiValues), label=f"Re[Ψ(x,t)]")
-line_phiIm, = ax_phiIm.plot(pValues, np.imag(phiValues), label=f"Im[Ψ(x,t)]",color='orange')
-line_phiProb, = ax_phiDist.plot(pValues, np.abs(np.square(phiValues)),color='green')
+line_phi, = ax_phi.plot(p, np.real(phiSuper(p, 0)), label=f"Re[Ψ(x,t)]")
+line_phiIm, = ax_phiIm.plot(p, np.imag(phiSuper(p, 0)), label=f"Im[Ψ(x,t)]",color='orange')
 
 # Formatting
 ax_psi.set_title('Wavefunctions ψₙ(x,t)')
@@ -128,13 +123,9 @@ ax_phiDist.set_xlabel('p(kgms)')
 ax_phiDist.set_ylabel('|ϕ(x)|²')
 ax_phiDist.grid(True)
 ax_phiDist.set_xlim(-3.5e-24,3.5e-24)
-
-#ax_ExpP.plot(tvalues,expectedPValues ,color='lightcoral')
-ax_ExpP.set_title('<P> Over Time')
-ax_ExpP.set_xlabel('Time (s)')
-ax_ExpP.set_ylabel('<P>')
-ax_ExpP.grid(True)
-
+def phi_sq_scalar(p, t):
+    # p is a scalar
+    return np.abs(phiSuper(np.array([p]), t)[0])**2
 # Animation function
 def animate(frame):
     t = frame * 1e-16  
@@ -142,16 +133,16 @@ def animate(frame):
     line_psiIm.set_ydata(np.imag(psiSuper(x, t)))
     line_prob.set_ydata(psi_sq(x, t))
     psiArea, psiError = quad(lambda x: psi_sq(x, t), 0, L)
+    line_phi.set_ydata(np.real(phiSuper(p, t)))
+    line_phiIm.set_ydata(np.imag(phiSuper(p, t)))
     print(f"-------------------------------")
     print(f"Time: {t}")
     print(f"∫₀ᴸ |ψₙ(x,t)|² dx = {psiArea:.6f} (± {psiError:.2e})")
-    print(f"∫₀ᴸ |ϕ(p,t)|² dx = {phiArea:.6f} (± {phiError:.2e})")
+    #print(f"∫ |ϕ(p,t)|² dx = {phiArea:.6f} (± {psiError:.2e})")
     print(f"<X> = {expectedX(t)*1e9} nm")
     print(f"<X²> = {expectedXSquared(t)}")
-    print(f"<P> = {expectedP(t)} kgms")
-    print(f"<P²> = {expectedPSquared(t)}")
     print(f"-------------------------------")
-    return line_psi,line_psiIm ,line_prob
+    return line_psi, line_psiIm, line_prob, line_phi, line_phiIm
 
 anim = FuncAnimation(fig, animate, frames=200, interval=50, blit=True)
 fig.suptitle(f"Time Dependent 1D Well Wave Functions")
