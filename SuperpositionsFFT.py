@@ -49,9 +49,11 @@ def expectedXSquared(t):
 
 #--------------MOMENTUM-------------#
 def phi_n(p, n):
-    numerator = n * np.sqrt(np.pi * L) * (1 - (-1)**n * np.exp(-1j * p * L / sci.hbar))
-    denominator = n**2 * np.pi**2 - (p * L / sci.hbar)**2
-    return numerator / denominator
+    k = n * np.pi / L
+    prefactor = np.sqrt(2 / L) / np.sqrt(2 * np.pi * sci.hbar)
+    numerator = k * (1 - (-1)**n * np.exp(-1j * p * L / sci.hbar))
+    denominator = k**2 - (p / sci.hbar)**2
+    return prefactor * numerator / denominator
 
 # Superposition of states
 def phiSuper(p, t):
@@ -63,6 +65,9 @@ def phiSuper(p, t):
 # Probability density
 def phi_sq(p, t):
     return np.abs(phiSuper(p, t))**2
+
+def phi_sq_scalar(p, t):
+    return np.abs(phiSuper(np.array([p]), t)[0])**2
 
 #--------------EXPECTATION VALUES-------------#
 #Calculated Expeted Values
@@ -143,7 +148,7 @@ def animate(frame):
     psiArea, psiError = quad(lambda x: psi_sq(x, t), 0, L)
     line_phi.set_ydata(np.real(phiSuper(p, t)))
     line_phiIm.set_ydata(np.imag(phiSuper(p, t)))
-    phiArea, phiError = quad(lambda p: phi_sq(p, t), p[0], p[-1])
+    phiArea, phiError = quad(lambda p: phi_sq_scalar(p, t), p[0], p[-1])
     print(f"-------------------------------")
     print(f"Time: {t}")
     print(f"∫₀ᴸ |ψₙ(x,t)|² dx = {psiArea:.6f} (± {psiError:.2e})")
