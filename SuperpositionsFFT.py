@@ -49,12 +49,11 @@ def expectedXSquared(t):
 
 #--------------MOMENTUM-------------#
 def phi_n(p, n):
-    k = n*np.pi/L
-    prefactor = np.sqrt(2/L) / np.sqrt(2*np.pi*sci.hbar)
-    numerator = k * (1 - (-1)**n * np.exp(-1j*p*L/sci.hbar))
-    denominator = k**2 - (p/sci.hbar)**2
-    return prefactor * numerator / denominator
+    numerator = n * np.sqrt(np.pi * L) * (1 - (-1)**n * np.exp(-1j * p * L / sci.hbar))
+    denominator = n**2 * np.pi**2 - (p * L / sci.hbar)**2
+    return numerator / denominator
 
+# Superposition of states
 def phiSuper(p, t):
     return (1/np.sqrt(n_max)) * sum(
         phi_n(p, n) * np.exp(-1j * Energy(n) * t / sci.hbar)
