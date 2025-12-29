@@ -13,7 +13,7 @@ dx = x[1] - x[0]
 N = len(x) 
 t=0.0
 tvalues = np.linspace(0,2e-14,res)
-n_max = 1
+n_max = 3
 momentumBounds = n_max * np.pi * sci.hbar / L
 p = np.linspace(-12*momentumBounds, 12*momentumBounds, res)
 #--------------POSITION SPACE-------------#
@@ -48,14 +48,22 @@ def expectedXSquared(t):
     return expectedXSquaredValue
 
 #--------------MOMENTUM-------------#
-def phi_n(p,n):
-    numerator = n*np.pi*sci.hbar*(1-(-1)**n*np.exp(-1j*p*L/sci.hbar))
-    denominator = (np.pi**2)*(sci.hbar**2)*(n**2) - (p**2)*(L**2)
-    return np.sqrt((sci.hbar)/(L*np.pi)) * (numerator/denominator)
+def phi_n(p, n):
+    k = n*np.pi/L
+    prefactor = np.sqrt(2/L) / np.sqrt(2*np.pi*sci.hbar)
+    numerator = k * (1 - (-1)**n * np.exp(-1j*p*L/sci.hbar))
+    denominator = k**2 - (p/sci.hbar)**2
+    return prefactor * numerator / denominator
 
 def phiSuper(p, t):
-    return sum(phi_n(p, n) * np.exp(-1j * Energy(n) * t / sci.hbar) for n in range(1, n_max + 1)) / np.sqrt(n_max)
+    return (1/np.sqrt(n_max)) * sum(
+        phi_n(p, n) * np.exp(-1j * Energy(n) * t / sci.hbar)
+        for n in range(1, n_max + 1)
+    )
 
+# Probability density
+def phi_sq(p, t):
+    return np.abs(phiSuper(p, t))**2
 
 #--------------EXPECTATION VALUES-------------#
 #Calculated Expeted Values
@@ -75,6 +83,7 @@ line_prob, = ax_psiDist.plot(x_nm, psi_sq(x, 0),color='green')
 
 line_phi, = ax_phi.plot(p, np.real(phiSuper(p, 0)), label=f"Re[Ψ(x,t)]")
 line_phiIm, = ax_phiIm.plot(p, np.imag(phiSuper(p, 0)), label=f"Im[Ψ(x,t)]",color='orange')
+line_phiprob, = ax_phiDist.plot(p, phi_sq(p, 0),color='green')
 
 # Formatting
 ax_psi.set_title('Wavefunctions ψₙ(x,t)')
@@ -135,9 +144,11 @@ def animate(frame):
     psiArea, psiError = quad(lambda x: psi_sq(x, t), 0, L)
     line_phi.set_ydata(np.real(phiSuper(p, t)))
     line_phiIm.set_ydata(np.imag(phiSuper(p, t)))
+    phiArea, phiError = quad(lambda p: phi_sq(p, t), p[0], p[-1])
     print(f"-------------------------------")
     print(f"Time: {t}")
     print(f"∫₀ᴸ |ψₙ(x,t)|² dx = {psiArea:.6f} (± {psiError:.2e})")
+    print(f"∫ |ϕ(p,t)|² dp = {phiArea:.6f}")
     #print(f"∫ |ϕ(p,t)|² dx = {phiArea:.6f} (± {psiError:.2e})")
     print(f"<X> = {expectedX(t)*1e9} nm")
     print(f"<X²> = {expectedXSquared(t)}")
