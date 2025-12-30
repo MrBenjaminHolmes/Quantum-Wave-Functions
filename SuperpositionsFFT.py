@@ -1,4 +1,3 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
@@ -6,14 +5,14 @@ from scipy import constants as sci
 from matplotlib.animation import FuncAnimation
 
 # Parameters
-res = 5000
+res = 1000
 L = 1e-9              
 x = np.linspace(0, L, res)              
 dx = x[1] - x[0]
 N = len(x) 
 t=0.0
 tvalues = np.linspace(0,2e-14,res)
-n_max = 3
+n_max = 5
 momentumBounds = n_max * np.pi * sci.hbar / L
 p = np.linspace(-12*momentumBounds, 12*momentumBounds, res)
 #--------------POSITION SPACE-------------#
@@ -66,14 +65,23 @@ def phiSuper(p, t):
 def phi_sq(p, t):
     return np.abs(phiSuper(p, t))**2
 
-def phi_sq_scalar(p, t):
-    return np.abs(phiSuper(np.array([p]), t)[0])**2
+def expectedP(t):
+    expectedPValue, _ = quad(lambda p: p*np.abs(phiSuper(p,t))**2 , -12*momentumBounds, 12*momentumBounds)
+    return expectedPValue
+
+def expectedPSquared(t):
+    expectedPSquaredValue, _ = quad(lambda p: (p**2)*np.abs(phiSuper(p,t))**2 , -12*momentumBounds, 12*momentumBounds)
+    return expectedPSquaredValue
 
 #--------------EXPECTATION VALUES-------------#
 #Calculated Expeted Values
 expectedXValues = [expectedX(time) for time in tvalues]
 expectedXSquaredValues = [expectedXSquared(time) for time in tvalues]
 deltaXValues = [np.sqrt(expectedXSquared(time)-(expectedX(time)**2)) for time in tvalues]
+
+expectedPValues = [expectedP(time) for time in tvalues]
+expectedPSquaredValues = [expectedPSquared(time) for time in tvalues]
+deltaPValues = [np.sqrt(expectedPSquared(time)-(expectedP(time)**2)) for time in tvalues]
 
 #---------------PLOTTING---------------#
 x_nm = x * 1e9
@@ -136,9 +144,19 @@ ax_phiDist.set_xlabel('p(kgms)')
 ax_phiDist.set_ylabel('|ϕ(x)|²')
 ax_phiDist.grid(True)
 ax_phiDist.set_xlim(-3.5e-24,3.5e-24)
-def phi_sq_scalar(p, t):
-    # p is a scalar
-    return np.abs(phiSuper(np.array([p]), t)[0])**2
+
+ax_ExpP.plot(tvalues,expectedPValues ,color='lightcoral')
+ax_ExpP.set_title('<P> Over Time')
+ax_ExpP.set_xlabel('Time (s)')
+ax_ExpP.set_ylabel('<P>')
+ax_ExpP.grid(True)
+
+ax_DeltaP.plot(tvalues,deltaPValues ,color='mediumpurple')
+ax_DeltaP.set_title('ΔP Over Time')
+ax_DeltaP.set_xlabel('Time (s)')
+ax_DeltaP.set_ylabel('ΔP')
+ax_DeltaP.grid(True)
+
 # Animation function
 def animate(frame):
     t = frame * 1e-16  
@@ -148,14 +166,15 @@ def animate(frame):
     psiArea, psiError = quad(lambda x: psi_sq(x, t), 0, L)
     line_phi.set_ydata(np.real(phiSuper(p, t)))
     line_phiIm.set_ydata(np.imag(phiSuper(p, t)))
-    phiArea, phiError = quad(lambda p: phi_sq_scalar(p, t), p[0], p[-1])
-    print(f"-------------------------------")
+    phiArea, phiError = quad(lambda p: phi_sq(p, t), p[0], p[-1])
+    print(f"-----------{n_max}------------")
     print(f"Time: {t}")
     print(f"∫₀ᴸ |ψₙ(x,t)|² dx = {psiArea:.6f} (± {psiError:.2e})")
-    print(f"∫ |ϕ(p,t)|² dp = {phiArea:.6f}")
-    #print(f"∫ |ϕ(p,t)|² dx = {phiArea:.6f} (± {psiError:.2e})")
+    print(f"∫ |ϕ(p,t)|² dx = {phiArea:.6f} (± {phiError:.2e})")
     print(f"<X> = {expectedX(t)*1e9} nm")
     print(f"<X²> = {expectedXSquared(t)}")
+    print(f"<P> = {expectedP(t)} kgms")
+    print(f"<P²> = {expectedPSquared(t)}")
     print(f"-------------------------------")
     return line_psi, line_psiIm, line_prob, line_phi, line_phiIm
 
