@@ -12,7 +12,7 @@ dx = x[1] - x[0]
 N = len(x) 
 t=0.0
 tvalues = np.linspace(0,2e-14,res)
-n_max = 5
+n_max = 3
 momentumBounds = n_max * np.pi * sci.hbar / L
 p = np.linspace(-12*momentumBounds, 12*momentumBounds, res)
 #--------------POSITION SPACE-------------#
@@ -83,11 +83,13 @@ expectedPValues = [expectedP(time) for time in tvalues]
 expectedPSquaredValues = [expectedPSquared(time) for time in tvalues]
 deltaPValues = [np.sqrt(expectedPSquared(time)-(expectedP(time)**2)) for time in tvalues]
 
+heisenbergUncValue = ([a * b for a, b in zip(deltaXValues, deltaPValues)])
+
 #---------------PLOTTING---------------#
 x_nm = x * 1e9
 fig, axes = plt.subplots(3, 4, figsize=(12, 7))
 
-(ax_psi, ax_psiIm,ax_psiDist,ax_ExpX) , (ax_phi, ax_phiIm,ax_phiDist,ax_ExpP), (ax_DeltaX , ax_DeltaP, _,_) = axes
+(ax_psi, ax_psiIm,ax_psiDist,ax_ExpX) , (ax_phi, ax_phiIm,ax_phiDist,ax_ExpP), (ax_DeltaX , ax_DeltaP, ax_heisenbergUnc,_) = axes
 
 line_psi, = ax_psi.plot(x_nm, np.real(psiSuper(x, 0)), label=f"Re[Ψ(x,t)]")
 line_psiIm, = ax_psiIm.plot(x_nm, np.imag(psiSuper(x, 0)), label=f"Im[Ψ(x,t)]",color='orange')
@@ -132,18 +134,21 @@ ax_phi.set_xlabel('p(kgms)')
 ax_phi.set_ylabel('Reϕ(p,t)')
 ax_phi.grid(True)
 ax_phi.set_xlim(-3.5e-24,3.5e-24)
+ax_phi.set_ylim(-10e11,10e11)
 
 ax_phiIm.set_title('Wavefunction ϕ(p,t)')
 ax_phiIm.set_xlabel('p(kgms)')
 ax_phiIm.set_ylabel('Imϕ(p,t)')
 ax_phiIm.grid(True)
 ax_phiIm.set_xlim(-3.5e-24,3.5e-24)
+ax_phiIm.set_ylim(-10e11,10e11)
 
 ax_phiDist.set_title('Probability Distribution |ϕ(x)|²')
 ax_phiDist.set_xlabel('p(kgms)')
 ax_phiDist.set_ylabel('|ϕ(x)|²')
 ax_phiDist.grid(True)
 ax_phiDist.set_xlim(-3.5e-24,3.5e-24)
+
 
 ax_ExpP.plot(tvalues,expectedPValues ,color='lightcoral')
 ax_ExpP.set_title('<P> Over Time')
@@ -156,6 +161,15 @@ ax_DeltaP.set_title('ΔP Over Time')
 ax_DeltaP.set_xlabel('Time (s)')
 ax_DeltaP.set_ylabel('ΔP')
 ax_DeltaP.grid(True)
+
+ax_heisenbergUnc.plot(tvalues,heisenbergUncValue ,color='mediumpurple')
+ax_heisenbergUnc.set_title('ΔX ΔP Over Time')
+ax_heisenbergUnc.set_xlabel('Time (s)')
+
+ax_heisenbergUnc.set_ylabel('ΔX ΔP')
+ax_heisenbergUnc.axhline(y=sci.hbar/2, color='red', linestyle='--', label='ℏ/2')
+ax_heisenbergUnc.grid(True)
+ax_heisenbergUnc.legend()
 
 # Animation function
 def animate(frame):
@@ -175,7 +189,11 @@ def animate(frame):
     print(f"<X²> = {expectedXSquared(t)}")
     print(f"<P> = {expectedP(t)} kgms")
     print(f"<P²> = {expectedPSquared(t)}")
+    print(f"ΔXΔP = {heisenbergUncValue[frame]}")
     print(f"-------------------------------")
+    if heisenbergUncValue[frame] < (sci.hbar/2):
+        print("Heisenberg Uncertainty Principle Broken")
+
     return line_psi, line_psiIm, line_prob, line_phi, line_phiIm
 
 anim = FuncAnimation(fig, animate, frames=200, interval=50, blit=True)
