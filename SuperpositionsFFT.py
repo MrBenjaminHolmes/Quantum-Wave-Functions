@@ -5,7 +5,7 @@ from scipy import constants as sci
 from matplotlib.animation import FuncAnimation
 
 # Parameters
-res = 5000
+res = 10000
 L = 1e-9              
 x = np.linspace(0, L, res)              
 dx = x[1] - x[0]
@@ -72,7 +72,7 @@ def expectedP(t):
 def expectedPSquared(t):
     expectedPSquaredValue, _ = quad(lambda p: (p**2)*np.abs(phiSuper(p,t))**2 , -12*momentumBounds, 12*momentumBounds)
     return expectedPSquaredValue
-
+    
 #--------------EXPECTATION VALUES-------------#
 #Calculated Expeted Values
 expectedXValues = [expectedX(time) for time in tvalues]
@@ -86,6 +86,8 @@ deltaPValues = [np.sqrt(expectedPSquared(time)-(expectedP(time)**2)) for time in
 heisenbergUncValue = ([a * b for a, b in zip(deltaXValues, deltaPValues)])
 dXdtValues = np.gradient(expectedXValues, tvalues)
 dXdt_analytic = np.array(expectedPValues) / sci.electron_mass
+
+dPdtValues = np.gradient(expectedPValues, tvalues)
 
 #---------------PLOTTING---------------#
 x_nm = x * 1e9
@@ -173,6 +175,8 @@ ax_heisenbergUnc.axhline(y=sci.hbar/2, color='red', linestyle='--', label='ℏ/2
 ax_heisenbergUnc.grid(True)
 ax_heisenbergUnc.legend()
 
+
+ax_ehren.set_title('d<X>/dt vs <P>/m (Ehrenfest Check)')
 ax_ehren.plot(tvalues,dXdtValues ,color='hotpink')
 ax_ehren.plot(tvalues,dXdt_analytic  ,color='steelblue')
 ax_ehren.set_xlabel('Time (s)')
@@ -200,6 +204,7 @@ def animate(frame):
     print(f"ΔXΔP = {heisenbergUncValue[frame]}")
     print(f"Difference(t) = {diff}")
     print(f"% Error = {np.abs(diff) / np.abs(dXdt_analytic[frame]) * 100}%")
+    print(f"<F> = {dPdtValues[frame]}")
     print(f"-------------------------------")
     if heisenbergUncValue[frame] < (sci.hbar/2):
         print("Heisenberg Uncertainty Principle Broken")
