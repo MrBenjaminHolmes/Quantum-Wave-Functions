@@ -5,14 +5,14 @@ from scipy import constants as sci
 from matplotlib.animation import FuncAnimation
 
 # Parameters
-res = 1000
+res = 5000
 L = 1e-9              
 x = np.linspace(0, L, res)              
 dx = x[1] - x[0]
 N = len(x) 
 t=0.0
 tvalues = np.linspace(0,2e-14,res)
-n_max = 3
+n_max = 2
 momentumBounds = n_max * np.pi * sci.hbar / L
 p = np.linspace(-12*momentumBounds, 12*momentumBounds, res)
 #--------------POSITION SPACE-------------#
@@ -84,12 +84,14 @@ expectedPSquaredValues = [expectedPSquared(time) for time in tvalues]
 deltaPValues = [np.sqrt(expectedPSquared(time)-(expectedP(time)**2)) for time in tvalues]
 
 heisenbergUncValue = ([a * b for a, b in zip(deltaXValues, deltaPValues)])
+dXdtValues = np.gradient(expectedXValues, tvalues)
+dXdt_analytic = np.array(expectedPValues) / sci.electron_mass
 
 #---------------PLOTTING---------------#
 x_nm = x * 1e9
 fig, axes = plt.subplots(3, 4, figsize=(12, 7))
 
-(ax_psi, ax_psiIm,ax_psiDist,ax_ExpX) , (ax_phi, ax_phiIm,ax_phiDist,ax_ExpP), (ax_DeltaX , ax_DeltaP, ax_heisenbergUnc,_) = axes
+(ax_psi, ax_psiIm,ax_psiDist,ax_ExpX) , (ax_phi, ax_phiIm,ax_phiDist,ax_ExpP), (ax_DeltaX , ax_DeltaP, ax_heisenbergUnc, ax_ehren) = axes
 
 line_psi, = ax_psi.plot(x_nm, np.real(psiSuper(x, 0)), label=f"Re[Ψ(x,t)]")
 line_psiIm, = ax_psiIm.plot(x_nm, np.imag(psiSuper(x, 0)), label=f"Im[Ψ(x,t)]",color='orange')
@@ -171,6 +173,10 @@ ax_heisenbergUnc.axhline(y=sci.hbar/2, color='red', linestyle='--', label='ℏ/2
 ax_heisenbergUnc.grid(True)
 ax_heisenbergUnc.legend()
 
+ax_ehren.plot(tvalues,dXdtValues ,color='hotpink')
+ax_ehren.plot(tvalues,dXdt_analytic  ,color='steelblue')
+ax_ehren.set_xlabel('Time (s)')
+
 # Animation function
 def animate(frame):
     t = frame * 1e-16  
@@ -180,7 +186,9 @@ def animate(frame):
     psiArea, psiError = quad(lambda x: psi_sq(x, t), 0, L)
     line_phi.set_ydata(np.real(phiSuper(p, t)))
     line_phiIm.set_ydata(np.imag(phiSuper(p, t)))
+    line_phiprob.set_ydata(phi_sq(p, t))
     phiArea, phiError = quad(lambda p: phi_sq(p, t), p[0], p[-1])
+    diff = np.abs(dXdtValues[frame]-dXdt_analytic[frame])
     print(f"-----------{n_max}------------")
     print(f"Time: {t}")
     print(f"∫₀ᴸ |ψₙ(x,t)|² dx = {psiArea:.6f} (± {psiError:.2e})")
@@ -190,6 +198,8 @@ def animate(frame):
     print(f"<P> = {expectedP(t)} kgms")
     print(f"<P²> = {expectedPSquared(t)}")
     print(f"ΔXΔP = {heisenbergUncValue[frame]}")
+    print(f"Difference(t) = {diff}")
+    print(f"% Error = {np.abs(diff) / np.abs(dXdt_analytic[frame]) * 100}%")
     print(f"-------------------------------")
     if heisenbergUncValue[frame] < (sci.hbar/2):
         print("Heisenberg Uncertainty Principle Broken")
