@@ -10,3 +10,6 @@ Visualize the **time-dependent wavefunctions** and **probability densities** of 
 - Calculate **energy levels** in Joules and electron-volts  
 - Animate wavefunction evolution over time  
 - Verify normalization with ∫₀ᴸ |Ψ(x,t)|² dx  
+
+📄 [Download the full report (PDF)](Quantum_Wave_Functions.pdf)
+*Due to Latex You must download report*
