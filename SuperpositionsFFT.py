@@ -12,7 +12,7 @@ dx = x[1] - x[0]
 N = len(x) 
 t=0.0
 tvalues = np.linspace(0,2e-14,res)
-n_max = 2
+n_max = 5
 momentumBounds = n_max * np.pi * sci.hbar / L
 p = np.linspace(-12*momentumBounds, 12*momentumBounds, res)
 #--------------POSITION SPACE-------------#
@@ -93,15 +93,24 @@ def jFunc(x,t):
     dpsicondx =  np.gradient(np.conjugate(psiSuper(x,t)),dx,edge_order=2)
     return np.real(((sci.hbar)/(2j*sci.electron_mass))*((np.conjugate(psiSuper(x,t))*dpsidx)-((psiSuper(x,t)*dpsicondx))))
 
+
+def continuity(x,t,dt = 1e-41):
+    rho_t = psi_sq(x, t)
+    rho_t_plus = psi_sq(x, t + dt)
+    dpdt = (rho_t_plus - rho_t) / dt
+    djdx = np.gradient(jFunc(x,t),dx ,edge_order=2)
+    return dpdt + djdx
+
 #---------------PLOTTING---------------#
 x_nm = x * 1e9
 fig, axes = plt.subplots(4, 4, figsize=(16, 12))
 
-(ax_psi, ax_psiIm,ax_psiDist,ax_ExpX) , (ax_phi, ax_phiIm,ax_phiDist,ax_ExpP), (ax_DeltaX , ax_DeltaP, ax_heisenbergUnc, ax_ehren), (ax_jFunc , _, _, _) = axes
+(ax_psi, ax_psiIm,ax_psiDist,ax_ExpX) , (ax_phi, ax_phiIm,ax_phiDist,ax_ExpP), (ax_DeltaX , ax_DeltaP, ax_heisenbergUnc, ax_ehren), (ax_jFunc , ax_Cont, _, _) = axes
 
 line_psi, = ax_psi.plot(x_nm, np.real(psiSuper(x, 0)), label=f"Re[Ψ(x,t)]")
 line_psiIm, = ax_psiIm.plot(x_nm, np.imag(psiSuper(x, 0)), label=f"Im[Ψ(x,t)]",color='orange')
 line_prob, = ax_psiDist.plot(x_nm, psi_sq(x, 0),color='green')
+
 line_jFunc, = ax_jFunc.plot(x_nm, jFunc(x,0),color='blue')
 
 line_phi, = ax_phi.plot(p, np.real(phiSuper(p, 0)), label=f"Re[Ψ(x,t)]")
@@ -187,6 +196,8 @@ ax_jFunc.set_ylabel("j(x, t)")
 ax_jFunc.set_ylim(-1e15, 1e15)
 ax_jFunc.grid(True)
 
+ax_Cont.plot(x_nm, continuity(x,t))
+
 ax_ehren.set_title('d<X>/dt vs <P>/m')
 ax_ehren.plot(tvalues,dXdtValues ,color='hotpink')
 ax_ehren.plot(tvalues,dXdt_analytic  ,color='steelblue')
@@ -221,7 +232,7 @@ def animate(frame):
     if heisenbergUncValue[frame] < (sci.hbar/2):
         print("Heisenberg Uncertainty Principle Broken")
 
-    return line_psi, line_psiIm, line_prob, line_phi, line_phiIm,line_jFunc
+    return line_psi, line_psiIm, line_prob, line_phi, line_phiIm, line_jFunc
 
 anim = FuncAnimation(fig, animate, frames=200, interval=50, blit=True)
 fig.suptitle(f"Time Dependent 1D Well Wave Functions")
