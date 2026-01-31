@@ -10,7 +10,7 @@ x = np.linspace(0, L, 1000)
     
 t=0.0
 tvalues = np.linspace(0,2e-14,1000)
-n_max = 1
+n_max = 2
 momentumBounds = n_max * np.pi * sci.hbar / L
 pValues = np.linspace(-12*momentumBounds, 12*momentumBounds, 1000)
 # Wavefunction

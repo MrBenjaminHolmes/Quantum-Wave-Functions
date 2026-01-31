@@ -5,7 +5,7 @@ from scipy import constants as sci
 from matplotlib.animation import FuncAnimation
 
 # Parameters
-res = 10000
+res = 1000
 L = 1e-9              
 x = np.linspace(0, L, res)              
 dx = x[1] - x[0]
@@ -87,17 +87,22 @@ heisenbergUncValue = ([a * b for a, b in zip(deltaXValues, deltaPValues)])
 dXdtValues = np.gradient(expectedXValues, tvalues)
 dXdt_analytic = np.array(expectedPValues) / sci.electron_mass
 
-dPdtValues = np.gradient(expectedPValues, tvalues)
+#--------------j-FUNCTION--------------#
+def jFunc(x,t):
+    dpsidx = np.gradient(psiSuper(x,t),dx,edge_order=2)
+    dpsicondx =  np.gradient(np.conjugate(psiSuper(x,t)),dx,edge_order=2)
+    return np.real(((sci.hbar)/(2j*sci.electron_mass))*((np.conjugate(psiSuper(x,t))*dpsidx)-((psiSuper(x,t)*dpsicondx))))
 
 #---------------PLOTTING---------------#
 x_nm = x * 1e9
-fig, axes = plt.subplots(3, 4, figsize=(12, 7))
+fig, axes = plt.subplots(4, 4, figsize=(16, 12))
 
-(ax_psi, ax_psiIm,ax_psiDist,ax_ExpX) , (ax_phi, ax_phiIm,ax_phiDist,ax_ExpP), (ax_DeltaX , ax_DeltaP, ax_heisenbergUnc, ax_ehren) = axes
+(ax_psi, ax_psiIm,ax_psiDist,ax_ExpX) , (ax_phi, ax_phiIm,ax_phiDist,ax_ExpP), (ax_DeltaX , ax_DeltaP, ax_heisenbergUnc, ax_ehren), (ax_jFunc , _, _, _) = axes
 
 line_psi, = ax_psi.plot(x_nm, np.real(psiSuper(x, 0)), label=f"Re[Ψ(x,t)]")
 line_psiIm, = ax_psiIm.plot(x_nm, np.imag(psiSuper(x, 0)), label=f"Im[Ψ(x,t)]",color='orange')
 line_prob, = ax_psiDist.plot(x_nm, psi_sq(x, 0),color='green')
+line_jFunc, = ax_jFunc.plot(x_nm, jFunc(x,0),color='blue')
 
 line_phi, = ax_phi.plot(p, np.real(phiSuper(p, 0)), label=f"Re[Ψ(x,t)]")
 line_phiIm, = ax_phiIm.plot(p, np.imag(phiSuper(p, 0)), label=f"Im[Ψ(x,t)]",color='orange')
@@ -166,7 +171,7 @@ ax_DeltaP.set_xlabel('Time (s)')
 ax_DeltaP.set_ylabel('ΔP')
 ax_DeltaP.grid(True)
 
-ax_heisenbergUnc.plot(tvalues,heisenbergUncValue ,color='mediumpurple')
+ax_heisenbergUnc.plot(tvalues,heisenbergUncValue ,color='palevioletred')
 ax_heisenbergUnc.set_title('ΔX ΔP Over Time')
 ax_heisenbergUnc.set_xlabel('Time (s)')
 
@@ -176,9 +181,16 @@ ax_heisenbergUnc.grid(True)
 ax_heisenbergUnc.legend()
 
 
-ax_ehren.set_title('d<X>/dt vs <P>/m (Ehrenfest Check)')
+ax_jFunc.set_title("Probability Current Density j(x, t)")
+ax_jFunc.set_xlabel("x (nm)")
+ax_jFunc.set_ylabel("j(x, t)")
+ax_jFunc.set_ylim(-1e15, 1e15)
+ax_jFunc.grid(True)
+
+ax_ehren.set_title('d<X>/dt vs <P>/m')
 ax_ehren.plot(tvalues,dXdtValues ,color='hotpink')
 ax_ehren.plot(tvalues,dXdt_analytic  ,color='steelblue')
+ax_ehren.grid(True)
 ax_ehren.set_xlabel('Time (s)')
 
 # Animation function
@@ -191,6 +203,7 @@ def animate(frame):
     line_phi.set_ydata(np.real(phiSuper(p, t)))
     line_phiIm.set_ydata(np.imag(phiSuper(p, t)))
     line_phiprob.set_ydata(phi_sq(p, t))
+    line_jFunc.set_ydata(jFunc(x, t))
     phiArea, phiError = quad(lambda p: phi_sq(p, t), p[0], p[-1])
     diff = np.abs(dXdtValues[frame]-dXdt_analytic[frame])
     print(f"-----------{n_max}------------")
@@ -202,14 +215,13 @@ def animate(frame):
     print(f"<P> = {expectedP(t)} kgms")
     print(f"<P²> = {expectedPSquared(t)}")
     print(f"ΔXΔP = {heisenbergUncValue[frame]}")
-    print(f"Difference(t) = {diff}")
+    print(f"Ehrenfest Check Difference = {diff}")
     print(f"% Error = {np.abs(diff) / np.abs(dXdt_analytic[frame]) * 100}%")
-    print(f"<F> = {dPdtValues[frame]}")
     print(f"-------------------------------")
     if heisenbergUncValue[frame] < (sci.hbar/2):
         print("Heisenberg Uncertainty Principle Broken")
 
-    return line_psi, line_psiIm, line_prob, line_phi, line_phiIm
+    return line_psi, line_psiIm, line_prob, line_phi, line_phiIm,line_jFunc
 
 anim = FuncAnimation(fig, animate, frames=200, interval=50, blit=True)
 fig.suptitle(f"Time Dependent 1D Well Wave Functions")
