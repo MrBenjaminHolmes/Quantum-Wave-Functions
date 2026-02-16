@@ -5,14 +5,14 @@ from scipy import constants as sci
 from matplotlib.animation import FuncAnimation
 
 # Parameters
-res = 1000
+res = 5000
 L = 1e-9              
 x = np.linspace(0, L, res)              
 dx = x[1] - x[0]
 N = len(x) 
 t=0.0
 tvalues = np.linspace(0,2e-14,res)
-n_max = 5
+n_max = 2
 momentumBounds = n_max * np.pi * sci.hbar / L
 p = np.linspace(-12*momentumBounds, 12*momentumBounds, res)
 #--------------POSITION SPACE-------------#
@@ -105,7 +105,7 @@ def continuity(x,t,dt = 1e-41):
 x_nm = x * 1e9
 fig, axes = plt.subplots(4, 4, figsize=(16, 12))
 
-(ax_psi, ax_psiIm,ax_psiDist,ax_ExpX) , (ax_phi, ax_phiIm,ax_phiDist,ax_ExpP), (ax_DeltaX , ax_DeltaP, ax_heisenbergUnc, ax_ehren), (ax_jFunc , ax_Cont, _, _) = axes
+(ax_psi, ax_psiIm,ax_psiDist,ax_ExpX) , (ax_phi, ax_phiIm,ax_phiDist,ax_ExpP), (ax_DeltaX , ax_DeltaP, ax_heisenbergUnc, ax_ehren), (ax_jFunc , ax_Cont, ax_carpet, _) = axes
 
 line_psi, = ax_psi.plot(x_nm, np.real(psiSuper(x, 0)), label=f"Re[Ψ(x,t)]")
 line_psiIm, = ax_psiIm.plot(x_nm, np.imag(psiSuper(x, 0)), label=f"Im[Ψ(x,t)]",color='orange')
@@ -116,6 +116,7 @@ line_jFunc, = ax_jFunc.plot(x_nm, jFunc(x,0),color='blue')
 line_phi, = ax_phi.plot(p, np.real(phiSuper(p, 0)), label=f"Re[Ψ(x,t)]")
 line_phiIm, = ax_phiIm.plot(p, np.imag(phiSuper(p, 0)), label=f"Im[Ψ(x,t)]",color='orange')
 line_phiprob, = ax_phiDist.plot(p, phi_sq(p, 0),color='green')
+
 
 # Formatting
 ax_psi.set_title('Wavefunctions ψₙ(x,t)')
@@ -196,6 +197,9 @@ ax_jFunc.set_ylabel("j(x, t)")
 ax_jFunc.set_ylim(-1e15, 1e15)
 ax_jFunc.grid(True)
 
+ax_Cont.set_title("Continuity Eqaution")
+ax_jFunc.grid(True)
+
 ax_Cont.plot(x_nm, continuity(x,t))
 
 ax_ehren.set_title('d<X>/dt vs <P>/m')
@@ -203,6 +207,17 @@ ax_ehren.plot(tvalues,dXdtValues ,color='hotpink')
 ax_ehren.plot(tvalues,dXdt_analytic  ,color='steelblue')
 ax_ehren.grid(True)
 ax_ehren.set_xlabel('Time (s)')
+
+T, X_grid = np.meshgrid(tvalues, x_nm)
+Z = np.zeros_like(X_grid)
+
+for i, t in enumerate(tvalues):
+    Z[:, i] = psi_sq(x, t)  # psi_sq(x, t) returns 1D array over x
+ax_carpet.contourf(T*1e15, X_grid, Z, levels=50, cmap='viridis')
+ax_carpet.set_xlabel("Time (fs)")
+ax_carpet.set_ylabel("x (nm)")
+ax_carpet.set_title("Probability Density Carpet Plot")
+
 
 # Animation function
 def animate(frame):
@@ -216,6 +231,7 @@ def animate(frame):
     line_phiprob.set_ydata(phi_sq(p, t))
     line_jFunc.set_ydata(jFunc(x, t))
     phiArea, phiError = quad(lambda p: phi_sq(p, t), p[0], p[-1])
+    #ax_carpet.contourf(X, Y, Z)
     diff = np.abs(dXdtValues[frame]-dXdt_analytic[frame])
     print(f"-----------{n_max}------------")
     print(f"Time: {t}")
